@@ -987,11 +987,12 @@ body.working button:not(#closeSetup) {
   aside {
     min-height: 0;
     display: grid;
-    grid-template-rows: auto auto minmax(60px, 1fr) auto;
+    grid-template-rows: max-content minmax(110px, auto) minmax(90px, 1fr) auto;
     gap: 10px;
   }
   .control-card {
     padding: 12px 14px;
+    min-height: 0;
     max-height: 47dvh;
     overflow-y: auto;
   }
@@ -1116,5 +1117,132 @@ body.working button:not(#closeSetup) {
   }
   .control-card .primary {
     margin-top: 6px;
+  }
+}
+
+/* Main view is the physical board, with camera-space annotations. */
+.view-label {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.live-board {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #17231b;
+  border: 1px solid #405844;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.live-board > video {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+#liveCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+.live-board .camera-placeholder {
+  background: #e9eee3;
+  gap: 12px;
+  text-align: center;
+  padding: 24px;
+}
+.live-board .camera-placeholder > span {
+  display: block;
+  font-size: 58px;
+}
+.live-board .camera-placeholder strong {
+  font-size: clamp(16px, 2vw, 24px);
+}
+.live-board .camera-placeholder small {
+  display: block;
+  font-size: 12px;
+}
+.live-board .camera-placeholder button {
+  width: auto;
+  padding: 12px 24px;
+  margin-top: 8px;
+}
+.live-board .live-label {
+  top: 14px;
+  left: 14px;
+  font-size: 10px;
+  z-index: 2;
+}
+.live-move {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  background: #15231bec;
+  color: #fff;
+  border: 1px solid #dce99a66;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+  pointer-events: none;
+  max-width: 90%;
+}
+.position-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+.position-board {
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+}
+.position-card .board-shell {
+  width: min(100%, 320px);
+  height: auto;
+  aspect-ratio: 1;
+  min-width: 0;
+  grid-template-columns: 15px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 15px;
+  filter: none;
+}
+.position-card .board-wrap {
+  border-width: 3px;
+}
+.position-card .files,
+.position-card .ranks {
+  font-size: 9px;
+}
+@media (min-width: 761px) and (min-height: 500px) {
+  .board-stage {
+    container-type: normal;
+  }
+  .position-card .board-shell {
+    width: min(100%, 38dvh);
+    height: auto;
+  }
+  .view-label {
+    font-size: 8px;
+  }
+}
+@media (max-width: 760px) {
+  .board-stage {
+    display: block;
+    height: min(55dvh, 480px);
+  }
+  .view-label {
+    display: none;
+  }
+  .position-card .board-shell {
+    width: min(100%, 320px);
+  }
+  .live-board .camera-placeholder small {
+    font-size: 10px;
   }
 }

@@ -27,47 +27,27 @@
             <span class="eyebrow">ЖИВАЯ ПАРТИЯ</span>
             <h1 id="headline">Шахматы за настоящей доской</h1>
           </div>
-          <button
-            id="flip"
-            class="icon-btn"
-            title="Развернуть экранную доску"
-            aria-label="Развернуть доску"
-          >
-            ⇅
-          </button>
+          <span class="view-label">РЕАЛЬНАЯ ДОСКА · LIVE</span>
         </div>
         <div class="board-stage">
-          <div class="board-shell">
-            <div id="ranks" class="ranks"></div>
-            <div class="board-wrap">
-              <div
-                id="board"
-                class="board"
-                role="grid"
-                aria-label="Шахматная доска"
-              ></div>
-              <svg
-                id="arrows"
-                class="arrows"
-                viewBox="0 0 800 800"
-                aria-hidden="true"
+          <div class="live-board" id="liveBoard">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas
+              id="liveCanvas"
+              aria-label="Реальная доска с подсветкой ходов"
+            ></canvas>
+            <div class="camera-placeholder" id="cameraPlaceholder">
+              <span>⌑</span><strong>Здесь будет ваша настоящая доска</strong>
+              <small
+                >Подключите камеру — стрелки появятся прямо на фигурах и
+                полях</small
               >
-                <defs>
-                  <marker
-                    id="arrowhead"
-                    markerWidth="4"
-                    markerHeight="4"
-                    refX="2.7"
-                    refY="2"
-                    orient="auto"
-                  >
-                    <path d="M0,0 L4,2 L0,4 Z" fill="currentColor" />
-                  </marker>
-                </defs>
-                <g id="arrowLines"></g>
-              </svg>
+              <button id="connect" class="primary">Подключить камеру</button>
             </div>
-            <div id="files" class="files"></div>
+            <span class="live-label" id="liveLabel" hidden
+              >● LIVE · ЛОКАЛЬНО</span
+            >
+            <div class="live-move" id="liveMove" hidden></div>
           </div>
         </div>
         <div class="board-footer">
@@ -96,6 +76,59 @@
         </div>
       </section>
       <aside>
+        <section class="camera-card position-card">
+          <div class="section-top">
+            <h2>Схема позиции</h2>
+            <div class="position-actions">
+              <button
+                id="flip"
+                class="text-btn"
+                title="Развернуть схему"
+                aria-label="Развернуть доску"
+              >
+                ⇅</button
+              ><button id="calibrateOpen" class="text-btn">Углы камеры</button>
+            </div>
+          </div>
+          <div class="position-board">
+            <div class="board-shell">
+              <div id="ranks" class="ranks"></div>
+              <div class="board-wrap">
+                <div
+                  id="board"
+                  class="board"
+                  role="grid"
+                  aria-label="Шахматная доска"
+                ></div>
+                <svg
+                  id="arrows"
+                  class="arrows"
+                  viewBox="0 0 800 800"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <marker
+                      id="arrowhead"
+                      markerWidth="4"
+                      markerHeight="4"
+                      refX="2.7"
+                      refY="2"
+                      orient="auto"
+                    >
+                      <path d="M0,0 L4,2 L0,4 Z" fill="currentColor" />
+                    </marker>
+                  </defs>
+                  <g id="arrowLines"></g>
+                </svg>
+              </div>
+              <div id="files" class="files"></div>
+            </div>
+          </div>
+          <div class="camera-bottom">
+            <span id="cameraStatus">Ожидает подключения</span
+            ><span>Можно исправить ход</span>
+          </div>
+        </section>
         <section class="control-card">
           <div class="section-top">
             <h2>Ваша партия</h2>
@@ -145,25 +178,6 @@
           <p id="message" class="message" role="status" aria-live="polite">
             Ход записывается только после вашего подтверждения.
           </p>
-        </section>
-        <section class="camera-card">
-          <div class="section-top">
-            <h2><span class="camera-dot"></span> Камера</h2>
-            <button class="text-btn" id="calibrateOpen">Настроить</button>
-          </div>
-          <div id="miniCamera" class="mini-camera">
-            <video id="video" autoplay muted playsinline></video>
-            <div class="camera-placeholder" id="cameraPlaceholder">
-              <span>⌑</span><strong>Ваша доска в кадре</strong
-              ><small>Подключите USB-камеру или камеру Mac</small
-              ><button id="connect" class="secondary">Подключить камеру</button>
-            </div>
-            <span class="live-label" id="liveLabel" hidden>● LIVE</span>
-          </div>
-          <div class="camera-bottom">
-            <span id="cameraStatus">Ожидает подключения</span
-            ><span>Только локально</span>
-          </div>
         </section>
         <section class="history-card">
           <div class="section-top">
@@ -275,6 +289,7 @@
       <div id="promotionChoices" class="promotion-choices"></div>
       <button id="cancelPromotion" class="secondary wide">Отмена</button>
     </dialog>
+    <script src="/geometry.js" defer></script>
     <script src="/app.js" defer></script>
   </body>
 </html>

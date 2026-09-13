@@ -401,6 +401,9 @@ async function connect() {
     throw new Error(
       "Камера работает в Chrome на localhost. Откройте приложение через run.sh.",
     );
+  const previousCamera =
+    stream?.getVideoTracks()[0]?.getSettings().deviceId ||
+    localStorage.getItem("chessCam.camera");
   if (stream) stream.getTracks().forEach((t) => t.stop());
   stream = null;
   let id = $("cameraSelect").value;
@@ -430,9 +433,13 @@ async function connect() {
   }
   $("video").srcObject = stream;
   await $("video").play();
+  const currentCamera = stream.getVideoTracks()[0].getSettings().deviceId;
+  const changedCamera = previousCamera && currentCamera !== previousCamera;
   const savedCorners = state.corners?.map((point) => [...point]) || [];
-  apply(await api("camera-reset", {}));
-  corners = savedCorners;
+  if (changedCamera || !savedCorners.length)
+    apply(await api("camera-reset", {}));
+  corners = changedCamera ? [] : savedCorners;
+  if (currentCamera) localStorage.setItem("chessCam.camera", currentCamera);
   $("cameraPlaceholder").hidden = true;
   $("liveLabel").hidden = false;
   await listCameras();
@@ -447,7 +454,11 @@ async function connect() {
     renderControls();
   };
   snapshot();
-  message("Камера подключена. Отметьте четыре угла доски.");
+  message(
+    state.calibrated
+      ? "Камера подключена. Проверьте, что контур совпадает с доской. Партия и разметка сохранены."
+      : "Камера подключена. Отметьте четыре угла доски.",
+  );
   renderControls();
 }
 function snapshot() {
@@ -795,3 +806,153 @@ async function status() {
     message("Сервер недоступен. Запустите run.sh и обновите страницу.", true);
   }
 })();
+
+// Live camera annotations use the same a8 → h8 → h1 → a1 calibration as vision.py.
+let liveMapping = null;
+function drawLiveBoard() {
+  requestAnimationFrame(drawLiveBoard);
+  const canvas = $("liveCanvas"),
+    video = $("video");
+  if (!stream || video.readyState < 2 || !video.videoWidth) {
+    liveMapping = null;
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const width = Math.round(rect.width * ratio),
+    height = Math.round(rect.height * ratio);
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.fillStyle = "#17231b";
+  ctx.fillRect(0, 0, rect.width, rect.height);
+  const scale = Math.min(
+    rect.width / video.videoWidth,
+    rect.height / video.videoHeight,
+  );
+  const dw = video.videoWidth * scale,
+    dh = video.videoHeight * scale;
+  const ox = (rect.width - dw) / 2,
+    oy = (rect.height - dh) / 2;
+  ctx.drawImage(video, ox, oy, dw, dh);
+  const G = window.BoardGeometry;
+  const h = state?.corners ? G.homography(state.corners) : null;
+  liveMapping = h ? { h, ox, oy, dw, dh } : null;
+  const move = state?.proposal?.uci || state?.pending?.uci;
+  $("liveMove").hidden = !move || !h;
+  if (move && h)
+    $("liveMove").textContent =
+      (state.proposal ? "Ваш ход: " : "Компьютер: ") + moveText(move);
+  if (!h) return;
+  const pixel = ([u, v]) => [ox + u * dw, oy + v * dh];
+  function path(points) {
+    points.forEach((p, i) => {
+      const [x, y] = pixel(p);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+  }
+  ctx.beginPath();
+  ctx.rect(ox, oy, dw, dh);
+  path(state.corners);
+  ctx.fillStyle = "rgba(12,22,14,.36)";
+  ctx.fill("evenodd");
+  ctx.beginPath();
+  path(state.corners);
+  ctx.strokeStyle = "#dfedb5aa";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  function highlight(sq, fill, stroke) {
+    ctx.beginPath();
+    path(G.square(h, sq));
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  function arrow(from, to) {
+    const [x1, y1] = pixel(G.center(h, from)),
+      [x2, y2] = pixel(G.center(h, to));
+    const angle = Math.atan2(y2 - y1, x2 - x1),
+      length = Math.hypot(x2 - x1, y2 - y1);
+    const head = Math.min(20, Math.max(10, length * 0.2));
+    ctx.save();
+    ctx.shadowColor = "#0009";
+    ctx.shadowBlur = 5;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = state.proposal ? "#63eed0" : "#ffd45c";
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.lineWidth = Math.max(4, dw / 170);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(
+      x2 - Math.cos(angle) * head * 0.65,
+      y2 - Math.sin(angle) * head * 0.65,
+    );
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(
+      x2 - head * Math.cos(angle - 0.48),
+      y2 - head * Math.sin(angle - 0.48),
+    );
+    ctx.lineTo(
+      x2 - head * Math.cos(angle + 0.48),
+      y2 - head * Math.sin(angle + 0.48),
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    const label = to,
+      [lx, ly] = pixel(G.center(h, to));
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillStyle = "#14231ee6";
+    ctx.fillRect(lx + 10, ly - 27, 30, 20);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(label, lx + 16, ly - 12);
+  }
+  if (move) {
+    highlight(move.slice(0, 2), "#ffd45c25", "#ffd45c");
+    highlight(move.slice(2, 4), "#ffd45c66", "#ffe68b");
+    arrow(move.slice(0, 2), move.slice(2, 4));
+    if (
+      state.pieces[move.slice(0, 2)]?.toLowerCase() === "k" &&
+      Math.abs(files.indexOf(move[0]) - files.indexOf(move[2])) === 2
+    ) {
+      const from = (move[2] === "g" ? "h" : "a") + move[1],
+        to = (move[2] === "g" ? "f" : "d") + move[1];
+      highlight(from, "#ffd45c25", "#ffd45c");
+      highlight(to, "#ffd45c44", "#ffe68b");
+      arrow(from, to);
+    }
+  } else {
+    const last = state?.history.at(-1)?.uci;
+    if (last) highlight(last.slice(2, 4), "#8edaa922", "#b9f0c799");
+  }
+  if (selected) {
+    highlight(selected, "#68d8ef44", "#95eaff");
+    for (const m of state.legal.filter((m) => m.uci.startsWith(selected)))
+      highlight(m.uci.slice(2, 4), "#68d8ef33", "#95eaff99");
+  }
+}
+$("liveCanvas").onclick = (event) => {
+  if (!liveMapping) return;
+  const rect = event.currentTarget.getBoundingClientRect(),
+    { h, ox, oy, dw, dh } = liveMapping;
+  const point = window.BoardGeometry.unproject(
+    h,
+    (event.clientX - rect.left - ox) / dw,
+    (event.clientY - rect.top - oy) / dh,
+  );
+  if (!point || point.some((v) => v < 0 || v >= 1)) return;
+  selectSquare(
+    files[Math.floor(point[0] * 8)] + (8 - Math.floor(point[1] * 8)),
+  );
+};
+requestAnimationFrame(drawLiveBoard);
