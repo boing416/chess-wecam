@@ -1,0 +1,3 @@
+python-chess==1.999
+opencv-python-headless==5.0.0.93
+numpy==2.0.2
