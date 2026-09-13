@@ -12,6 +12,7 @@ let corners = [],
   calibrationImage = null,
   pendingComputerFrame = null,
   preparing = false;
+let queenCheck = -1;
 const files = "abcdefgh",
   cornerLabels = ["a8", "h8", "h1", "a1"];
 const names = {
@@ -529,6 +530,7 @@ function drawCalibration() {
       : "Четыре угла отмечены";
 }
 function openSetup() {
+  queenCheck = -1;
   if (state?.corners) corners = state.corners.map((p) => [...p]);
   $("setup").showModal();
   if (stream) snapshot();
@@ -631,6 +633,13 @@ $("start").onclick = () => {
     if (!stream) work("Подключаю камеру…", connect);
     return;
   }
+  if ($("cameraMode").checked && !$("fen").value.trim() && queenCheck !== 2) {
+    queenCheck = 0;
+    $("setup").close();
+    $("headline").textContent = "Проверим расположение ферзей";
+    message("Нажмите на клетку белого ферзя на видео, у основания фигуры. Ожидается d1 — светлая клетка.");
+    return;
+  }
   work("Начинаю партию…", async () => {
     const result = await api("start", {
       player: chosenColor,
@@ -639,6 +648,7 @@ $("start").onclick = () => {
       fen: $("fen").value.trim(),
     });
     preparing = false;
+    queenCheck = -1;
     apply(result);
     flipped = chosenColor === "black";
     render();
@@ -828,6 +838,7 @@ $("newGame").onclick = () => {
   work("Готовлю новую партию…", async () => {
     apply(await api("prepare-new", {}));
     preparing = true;
+    queenCheck = -1;
     selected = null;
     candidatePreview = null;
     $("candidates").replaceChildren();
@@ -1037,6 +1048,14 @@ function drawLiveBoard() {
     const last = state?.history.at(-1)?.uci;
     if (last) highlight(last.slice(2, 4), "#8edaa922", "#b9f0c799");
   }
+  if (queenCheck === 0 || queenCheck === 1) {
+    const square = queenCheck === 0 ? "d1" : "d8";
+    highlight(square, "#68d8ef44", "#95eaff");
+    $("liveMove").hidden = false;
+    $("liveMove").textContent = queenCheck === 0
+      ? "Нажмите клетку белого ферзя · d1"
+      : "Нажмите клетку чёрного ферзя · d8";
+  }
   if (selected) {
     highlight(selected, "#68d8ef44", "#95eaff");
     for (const m of state.legal.filter((m) => m.uci.startsWith(selected)))
@@ -1053,8 +1072,20 @@ $("liveCanvas").onclick = (event) => {
     (event.clientY - rect.top - oy) / dh,
   );
   if (!point || point.some((v) => v < 0 || v >= 1)) return;
-  selectSquare(
-    files[Math.floor(point[0] * 8)] + (8 - Math.floor(point[1] * 8)),
-  );
+  const square = files[Math.floor(point[0] * 8)] + (8 - Math.floor(point[1] * 8));
+  if (queenCheck === 0 || queenCheck === 1) {
+    const expected = queenCheck === 0 ? "d1" : "d8";
+    if (square !== expected) {
+      message(`Вы указали ${square}, а ожидается ${expected}. Проверьте фигуру и разметку. Если ферзь стоит на своём цвете, откройте «Углы камеры» и исправьте ориентацию; затем повторите старт.`, true);
+      return;
+    }
+    queenCheck += 1;
+    message(queenCheck === 1
+      ? "Белый ферзь совпал с d1. Теперь нажмите клетку чёрного ферзя — d8."
+      : "Оба ферзя совпали с разметкой. Нажмите «Начать партию». Это ручная проверка, остальные фигуры сверьте со схемой.");
+    if (queenCheck === 2) $("headline").textContent = "Ферзи проверены · можно начинать";
+    return;
+  }
+  selectSquare(square);
 };
 requestAnimationFrame(drawLiveBoard);
