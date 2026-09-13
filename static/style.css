@@ -794,7 +794,7 @@ textarea {
 #promotion {
   max-width: 440px;
 }
-body.working button:not(#closeSetup) {
+body.working button:not(#closeSetup):not(#stopScan) {
   pointer-events: none;
   opacity: 0.65;
 }

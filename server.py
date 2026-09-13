@@ -6,6 +6,7 @@ import mimetypes
 import os
 from pathlib import Path
 import threading
+import queue
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import urllib.parse
 import chess
@@ -251,9 +252,28 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(
                         200, {"placement": placement, "preview": vision.encode(after)}
                     )
-            result = vision.recognize_move(
-                board, before, after, bool(data.get("use_model", True))
-            )
+            completed = queue.Queue(maxsize=1)
+
+            def recognize():
+                try:
+                    completed.put((vision.recognize_move(
+                        board, before, after, bool(data.get("use_model", True))
+                    ), None))
+                except Exception as exc:
+                    completed.put((None, exc))
+
+            threading.Thread(target=recognize, daemon=True).start()
+            while True:
+                with GAME.lock:
+                    if GAME.scan_id != scan_id:
+                        raise ValueError("Распознавание остановлено.")
+                try:
+                    result, error = completed.get(timeout=0.1)
+                    if error:
+                        raise error
+                    break
+                except queue.Empty:
+                    continue
             with GAME.lock:
                 GAME.check_revision(rev)
                 if GAME.scan_id != scan_id:

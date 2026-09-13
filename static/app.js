@@ -5,6 +5,7 @@ let state = null,
   flipped = false,
   selected = null,
   busy = false,
+  scanStopped = false,
   stream = null;
 let corners = [],
   calibrationImage = null,
@@ -43,6 +44,7 @@ async function api(path, data) {
 }
 async function work(label, fn) {
   if (busy) return;
+  scanStopped = false;
   busy = true;
   document.body.classList.add("working");
   message(label);
@@ -52,8 +54,9 @@ async function work(label, fn) {
   try {
     await fn();
   } catch (e) {
-    message(e.message, true);
+    message(scanStopped ? "Распознавание остановлено. Нажмите «Я походил», чтобы сделать новый снимок." : e.message, !scanStopped);
   } finally {
+    $("stopScan").hidden = true;
     busy = false;
     document.body.classList.remove("working");
     $("message").classList.remove("busy");
@@ -641,10 +644,14 @@ $("scan").onclick = () => {
       ? "Сравниваю кадры и проверяю ход в Gemma…"
       : "Сравниваю кадры доски…",
     async () => {
+      scanStopped = false;
+      $("stopScan").hidden = false;
+      $("stopScan").disabled = false;
       const result = await api("scan", {
         image: frame(),
         use_model: $("useModel").checked,
       });
+      if (scanStopped) return;
       apply(result);
       $("candidates").replaceChildren();
       if (!state.proposal) {
@@ -665,6 +672,17 @@ $("scan").onclick = () => {
       );
     },
   );
+};
+$("stopScan").onclick = async () => {
+  $("stopScan").disabled = true;
+  try {
+    apply(await api("cancel", {}));
+    scanStopped = true;
+    message("Распознавание остановлено. Можно повторить снимок после завершения отмены.");
+  } catch (e) {
+    message(e.message, true);
+    $("stopScan").disabled = false;
+  }
 };
 $("confirm").onclick = () =>
   work("Ход подтверждён. Компьютер думает…", async () => {
