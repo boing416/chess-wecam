@@ -1260,3 +1260,9 @@ body.working button:not(#closeSetup):not(#stopScan) {
     font-size: 10px;
   }
 }
+
+.candidates button.previewing {
+  border-color: #9474d1;
+  background: #f0eafa;
+  box-shadow: inset 0 0 0 1px #9474d1;
+}

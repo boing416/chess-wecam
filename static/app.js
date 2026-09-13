@@ -6,6 +6,7 @@ let state = null,
   selected = null,
   busy = false,
   scanStopped = false,
+  candidatePreview = null,
   stream = null;
 let corners = [],
   calibrationImage = null,
@@ -46,6 +47,8 @@ async function work(label, fn) {
   if (busy) return;
   scanStopped = false;
   busy = true;
+  candidatePreview = null;
+  if (state) renderBoard();
   document.body.classList.add("working");
   message(label);
   $("message").classList.add("busy");
@@ -66,6 +69,7 @@ async function work(label, fn) {
 }
 function apply(result) {
   if (result.state) {
+    candidatePreview = null;
     state = result.state;
     selected = null;
     render();
@@ -151,9 +155,9 @@ function renderBoard() {
     ),
   );
   $("arrowLines").replaceChildren();
-  const arrow = state.proposal?.uci || state.pending?.uci;
+  const arrow = state.proposal?.uci || state.pending?.uci || candidatePreview;
   if (arrow) {
-    $("arrows").style.color = state.proposal ? "#e9b544" : "#efb13b";
+    $("arrows").style.color = candidatePreview ? "#ad8cff" : "#efb13b";
     addArrow(arrow.slice(0, 2), arrow.slice(2, 4));
     const piece = state.pieces[arrow.slice(0, 2)];
     if (
@@ -655,14 +659,26 @@ $("scan").onclick = () => {
       apply(result);
       $("candidates").replaceChildren();
       if (!state.proposal) {
+        candidatePreview = result.recognition.candidates.find((m) => m.score > 0)?.uci || null;
         for (const m of result.recognition.candidates) {
           const b = document.createElement("button");
           b.textContent =
             m.san + " · " + m.uci.slice(0, 2) + "–" + m.uci.slice(2, 4);
+          const preview = () => {
+            candidatePreview = m.uci;
+            renderBoard();
+            for (const button of $("candidates").children)
+              button.classList.toggle("previewing", button === b);
+          };
+          b.onmouseenter = preview;
+          b.onfocus = preview;
+          b.classList.toggle("previewing", m.uci === candidatePreview);
+          b.title = "Показать стрелку; нажать для подтверждения варианта";
           b.onclick = () => propose(m.uci);
           $("candidates").append(b);
         }
       }
+      renderBoard();
       message(
         result.recognition.warning ||
           (state.proposal
@@ -861,11 +877,11 @@ function drawLiveBoard() {
   const G = window.BoardGeometry;
   const h = state?.corners ? G.homography(state.corners) : null;
   liveMapping = h ? { h, ox, oy, dw, dh } : null;
-  const move = state?.proposal?.uci || state?.pending?.uci;
+  const move = state?.proposal?.uci || state?.pending?.uci || candidatePreview;
   $("liveMove").hidden = !move || !h;
   if (move && h)
     $("liveMove").textContent =
-      (state.proposal ? "Ваш ход: " : "Компьютер: ") + moveText(move);
+      (state.proposal ? "Ваш ход: " : state.pending ? "Компьютер: " : "Предположение: ") + moveText(move);
   if (!h) return;
   const pixel = ([u, v]) => [ox + u * dw, oy + v * dh];
   function path(points) {
@@ -905,7 +921,7 @@ function drawLiveBoard() {
     ctx.shadowColor = "#0009";
     ctx.shadowBlur = 5;
     ctx.lineCap = "round";
-    ctx.strokeStyle = state.proposal ? "#63eed0" : "#ffd45c";
+    ctx.strokeStyle = candidatePreview ? "#ad8cff" : state.proposal ? "#63eed0" : "#ffd45c";
     ctx.fillStyle = ctx.strokeStyle;
     ctx.lineWidth = Math.max(4, dw / 170);
     ctx.beginPath();
