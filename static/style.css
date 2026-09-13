@@ -987,14 +987,14 @@ body.working button:not(#closeSetup) {
   aside {
     min-height: 0;
     display: grid;
-    grid-template-rows: max-content minmax(110px, auto) minmax(90px, 1fr) auto;
+    grid-template-rows: minmax(120px, 1fr) max-content minmax(90px, 0.3fr) auto;
     gap: 10px;
   }
   .control-card {
     padding: 12px 14px;
     min-height: 0;
-    max-height: 47dvh;
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
   }
   .section-top {
     margin-bottom: 9px;
@@ -1223,9 +1223,23 @@ body.working button:not(#closeSetup) {
   .board-stage {
     container-type: normal;
   }
+  .position-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .position-card .section-top,
+  .position-card .camera-bottom {
+    flex-shrink: 0;
+  }
+  .position-board {
+    flex: 1;
+    container-type: size;
+    align-items: center;
+  }
   .position-card .board-shell {
-    width: min(100%, 38dvh);
-    height: auto;
+    width: min(100cqw, 100cqh, 38dvh);
+    height: min(100cqw, 100cqh, 38dvh);
   }
   .view-label {
     font-size: 8px;
