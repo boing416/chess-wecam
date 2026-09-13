@@ -170,6 +170,12 @@
             </div>
             <button id="stopScan" class="secondary" hidden>Остановить распознавание</button>
             <div id="candidates" class="candidates"></div>
+            <button id="pointMove" class="secondary" hidden>Указать ход на доске</button>
+            <div id="manualMove" hidden>
+              <label class="field-label" for="legalMove">Нет нужного варианта? Все допустимые ходы:</label>
+              <select id="legalMove" aria-label="Все допустимые ходы"></select>
+              <button id="chooseLegalMove" class="secondary">Показать для подтверждения</button>
+            </div>
             <div class="two-buttons secondary-actions">
               <button id="undo" class="secondary">↶ Шаг назад</button
               ><button id="newGame" class="secondary">Новая партия</button>
@@ -234,6 +240,7 @@
         начинают со стороны первой горизонтали.
       </p>
       <div class="setup-options">
+        <label><input type="checkbox" id="showCoordinates" /> Буквы и цифры по краям реальной доски</label>
         <label
           ><input type="checkbox" id="cameraMode" checked /> Играть через
           физическую доску и камеру</label

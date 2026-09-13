@@ -144,7 +144,15 @@ class Handler(BaseHTTPRequestHandler):
                 elif action == "/api/start":
                     GAME.start(data)
                 elif action == "/api/propose":
+                    manual_frame = None
+                    if GAME.camera_mode and data.get("image"):
+                        if GAME.corners is None:
+                            raise ValueError("Сначала отметьте углы доски.")
+                        manual_frame = vision.rectify(vision.decode_image(data["image"]), GAME.corners)
                     GAME.propose(data["uci"])
+                    if manual_frame is not None:
+                        GAME.scan_frame = manual_frame
+                        GAME.scan_revision = GAME.revision
                 elif action == "/api/confirm":
                     GAME.confirm()
                 elif action == "/api/cancel":

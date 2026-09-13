@@ -70,6 +70,7 @@ async function work(label, fn) {
 function apply(result) {
   if (result.state) {
     candidatePreview = null;
+    $("manualMove").hidden = true;
     state = result.state;
     selected = null;
     render();
@@ -231,6 +232,8 @@ function renderControls() {
           : "2. Отметить углы доски →"
         : "Начать партию →";
   $("scan").hidden = !yourTurn || computer || ended || !!state.proposal;
+  $("pointMove").hidden = !yourTurn || computer || ended || !active || !!state.proposal;
+  $("pointMove").disabled = busy || (state.camera_mode && !stream);
   $("scan").disabled = busy || (state.camera_mode && (!stream || needsSync));
   $("scan").textContent = state.camera_mode
     ? "Я походил →"
@@ -240,7 +243,7 @@ function renderControls() {
     busy || (state.camera_mode && (!stream || needsSync));
   $("retryEngine").hidden = !active || yourTurn || computer || ended;
   $("proposal").hidden = !state.proposal;
-  $("confirm").disabled = busy || (state.camera_mode && !state.synced);
+  $("confirm").disabled = busy || (state.camera_mode && !stream);
   $("undo").disabled =
     busy || (!state.history.length && !state.proposal && !state.pending);
   $("export").disabled = !state.history.length;
@@ -326,6 +329,7 @@ async function selectSquare(sq) {
     state.result
   )
     return;
+  candidatePreview = null;
   if (selected === sq) {
     selected = null;
     renderBoard();
@@ -365,13 +369,14 @@ async function selectSquare(sq) {
       ? sq
       : null;
   renderBoard();
+  message(selected ? `Выбрано ${sq}. Нажмите клетку назначения.` : "Нажмите клетку, где ваша фигура стояла до хода.");
 }
 async function propose(uci) {
   await work("Показываю выбранный ход…", async () => {
-    apply(await api("propose", { uci }));
+    apply(await api("propose", { uci, ...(state.camera_mode ? { image: frame() } : {}) }));
     message(
       state.camera_mode
-        ? "Проверьте ход. Если ещё не снимали кадр, нажмите «Нет», затем «Я походил»."
+        ? "Свежий кадр сохранён. Проверьте стрелку и нажмите «Да, верно»."
         : "Подтвердите выбранный ход.",
     );
   });
@@ -516,6 +521,8 @@ function drawCalibration() {
       );
     });
   }
+  if (corners.length === 4)
+    drawCoordinates(ctx, BoardGeometry.homography(corners), ([x,y]) => [x * canvas.width, y * canvas.height], canvas.width, canvas.height);
   $("cornerStep").textContent =
     corners.length < 4
       ? "Отметьте угол " + cornerLabels[corners.length]
@@ -678,6 +685,21 @@ $("scan").onclick = () => {
           $("candidates").append(b);
         }
       }
+      if (!state.proposal) {
+        $("manualMove").hidden = false;
+        const order = result.recognition.candidates.map((m) => m.uci);
+        const allMoves = [...state.legal].sort((a, b) => {
+          const rank = (m) => order.includes(m.uci) ? order.indexOf(m.uci) : 100;
+          return rank(a) - rank(b);
+        });
+        $("legalMove").replaceChildren(...allMoves.map((m) => {
+          const option = document.createElement("option");
+          option.value = m.uci;
+          option.textContent = moveText(m.uci);
+          return option;
+        }));
+        if (candidatePreview) $("legalMove").value = candidatePreview;
+      }
       renderBoard();
       message(
         result.recognition.warning ||
@@ -689,6 +711,49 @@ $("scan").onclick = () => {
     },
   );
 };
+$("pointMove").onclick = () => {
+  selected = null;
+  candidatePreview = null;
+  renderBoard();
+  message("На реальной доске нажмите клетку, откуда вы походили, затем клетку назначения. Нажимайте на клетки у основания фигур.");
+};
+$("legalMove").onchange = () => {
+  candidatePreview = $("legalMove").value;
+  renderBoard();
+};
+$("chooseLegalMove").onclick = () => {
+  if ($("legalMove").value) propose($("legalMove").value);
+};
+$("showCoordinates").checked = localStorage.getItem("chessCam.coordinates") === "true";
+$("showCoordinates").onchange = () => {
+  localStorage.setItem("chessCam.coordinates", String($("showCoordinates").checked));
+  drawCalibration();
+};
+function drawCoordinates(ctx, h, pixel, width, height) {
+  if (!h || !$("showCoordinates").checked) return;
+  ctx.save();
+  const size = Math.max(11, Math.min(18, width / 65));
+  ctx.font = `bold ${size}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const label = (x, y, text) => {
+    let [px, py] = pixel(BoardGeometry.project(h, x, y));
+    px = Math.max(size, Math.min(width - size, px));
+    py = Math.max(size, Math.min(height - size, py));
+    ctx.fillStyle = "#14231eef";
+    ctx.fillRect(px - size * .7, py - size * .7, size * 1.4, size * 1.4);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(text, px, py);
+  };
+  for (let i = 0; i < 8; i++) {
+    const t = (i + .5) / 8;
+    label(t, -.04, files[i]);
+    label(t, 1.04, files[i]);
+    label(-.04, t, String(8 - i));
+    label(1.04, t, String(8 - i));
+  }
+  ctx.restore();
+}
 $("stopScan").onclick = async () => {
   $("stopScan").disabled = true;
   try {
@@ -902,6 +967,7 @@ function drawLiveBoard() {
   ctx.strokeStyle = "#dfedb5aa";
   ctx.lineWidth = 1.5;
   ctx.stroke();
+  drawCoordinates(ctx, h, pixel, rect.width, rect.height);
   function highlight(sq, fill, stroke) {
     ctx.beginPath();
     path(G.square(h, sq));
