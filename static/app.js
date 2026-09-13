@@ -210,12 +210,19 @@ function renderControls() {
     ended = !!state.result,
     computer = !!state.pending,
     yourTurn = state.turn === state.player,
-    needsSync = state.camera_mode && !state.synced;
+    needsSync = state.camera_mode && (!state.synced || !stream);
   $("cameraMode").disabled = active;
   $("newGameSettings").hidden = active;
   $("activeControls").hidden = !active;
-  $("start").disabled =
-    busy || ($("cameraMode").checked && (!stream || !state.synced));
+  $("start").disabled = busy;
+  $("start").textContent =
+    $("cameraMode").checked && !stream
+      ? "1. Подключить камеру →"
+      : $("cameraMode").checked && !state.synced
+        ? state.calibrated
+          ? "2. Подтвердить расстановку →"
+          : "2. Отметить углы доски →"
+        : "Начать партию →";
   $("scan").hidden = !yourTurn || computer || ended || !!state.proposal;
   $("scan").disabled = busy || (state.camera_mode && (!stream || needsSync));
   $("scan").textContent = state.camera_mode
@@ -281,6 +288,13 @@ function renderControls() {
       label = "Stockfish";
       instruction = "Если расчёт прервался, нажмите «Повторить расчёт».";
     }
+  }
+  if (!active && $("cameraMode").checked) {
+    instruction = !stream
+      ? "Нажмите «Подключить камеру» справа. Затем отметьте четыре угла настоящей доски."
+      : !state.synced
+        ? "Нажмите зелёную кнопку справа. На снимке отметьте a8 → h8 → h1 → a1, затем подтвердите расстановку."
+        : "Доска настроена. Выберите цвет и нажмите «Начать партию».";
   }
   $("headline").textContent = title;
   $("instruction").textContent = instruction;
@@ -416,8 +430,9 @@ async function connect() {
   }
   $("video").srcObject = stream;
   await $("video").play();
+  const savedCorners = state.corners?.map((point) => [...point]) || [];
   apply(await api("camera-reset", {}));
-  corners = [];
+  corners = savedCorners;
   $("cameraPlaceholder").hidden = true;
   $("liveLabel").hidden = false;
   await listCameras();
@@ -584,7 +599,12 @@ $("sync").onclick = () =>
     $("setup").close();
   });
 $("cameraMode").onchange = renderControls;
-$("start").onclick = () =>
+$("start").onclick = () => {
+  if ($("cameraMode").checked && (!stream || !state.synced)) {
+    openSetup();
+    if (!stream) work("Подключаю камеру…", connect);
+    return;
+  }
   work("Начинаю партию…", async () => {
     const result = await api("start", {
       player: chosenColor,
@@ -598,6 +618,7 @@ $("start").onclick = () =>
     render();
     message("Партия началась. Ходы сохраняются на этом Mac.");
   });
+};
 $("scan").onclick = () => {
   if (!state.camera_mode) {
     message("Выберите фигуру и поле назначения на экранной доске.");

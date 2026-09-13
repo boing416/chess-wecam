@@ -907,3 +907,214 @@ body.working button:not(#closeSetup) {
     gap: 6px;
   }
 }
+
+/* Fit the playing surface to the browser viewport, not a minimum board size. */
+@media (min-width: 761px) and (min-height: 500px) {
+  body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  header {
+    height: 60px;
+    padding: 0 24px;
+  }
+  .brand {
+    font-size: 24px;
+  }
+  .brand-icon {
+    font-size: 35px;
+  }
+  main {
+    height: calc(100dvh - 60px);
+    padding: 14px 24px;
+    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 25vw, 350px);
+  }
+  .play-area {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 10px;
+  }
+  .board-heading {
+    width: 100%;
+    margin: 0;
+  }
+  h1 {
+    font-size: clamp(17px, 1.7vw, 24px);
+    margin-top: 4px;
+  }
+  .board-stage {
+    min-height: 0;
+    min-width: 0;
+    container-type: size;
+    align-items: center;
+  }
+  .board-shell {
+    width: min(100cqw, 100cqh);
+    height: min(100cqw, 100cqh);
+    min-width: 0;
+    grid-template-columns: 20px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 20px;
+  }
+  .board-wrap {
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+  .board-footer {
+    width: 100%;
+    margin: 0;
+  }
+  .player-chip > span {
+    width: 34px;
+    height: 34px;
+    line-height: 32px;
+    font-size: 24px;
+  }
+  .instruction {
+    width: 100%;
+    padding-top: 9px;
+    gap: 10px;
+  }
+  .instruction p {
+    font-size: 11px;
+  }
+  .keycap {
+    display: none;
+  }
+  aside {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto auto minmax(60px, 1fr) auto;
+    gap: 10px;
+  }
+  .control-card {
+    padding: 12px 14px;
+    max-height: 47dvh;
+    overflow-y: auto;
+  }
+  .section-top {
+    margin-bottom: 9px;
+  }
+  .field-label {
+    margin: 8px 0 6px;
+  }
+  .segmented button {
+    padding: 4px;
+  }
+  .difficulty {
+    margin-top: 10px;
+  }
+  input[type="range"] {
+    margin: 5px 0 1px;
+  }
+  .range-labels {
+    margin-bottom: 10px;
+  }
+  .primary {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
+  .message {
+    margin-top: 8px;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+  .camera-card .section-top {
+    padding: 10px 12px 0;
+    margin-bottom: 8px;
+  }
+  .mini-camera {
+    height: clamp(80px, 18dvh, 170px);
+    aspect-ratio: auto;
+    margin: 0 10px;
+  }
+  .camera-bottom {
+    padding: 8px 12px;
+  }
+  .camera-placeholder {
+    gap: 4px;
+  }
+  .camera-placeholder > span {
+    display: none;
+  }
+  .camera-placeholder button {
+    margin-top: 2px;
+  }
+  .history-card {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .history-card .section-top {
+    flex-shrink: 0;
+    padding: 10px 12px 0;
+    margin-bottom: 7px;
+  }
+  .history-header {
+    flex-shrink: 0;
+    padding: 5px 12px;
+  }
+  .history {
+    min-height: 0;
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+  }
+  .empty-history {
+    padding: 8px;
+  }
+  .empty-history > span {
+    display: none;
+  }
+  .system-status {
+    padding: 0;
+  }
+  .proposal {
+    margin-top: 8px;
+    padding: 9px;
+  }
+  .proposal strong {
+    font-size: 20px;
+    margin: 5px 0;
+  }
+  .proposal p {
+    margin: 5px 0 8px;
+  }
+}
+@media (min-width: 761px) and (max-height: 640px) {
+  header {
+    height: 48px;
+  }
+  main {
+    height: calc(100dvh - 48px);
+    padding: 10px 18px;
+    gap: 18px;
+  }
+  .play-area {
+    gap: 7px;
+  }
+  .control-card {
+    padding: 10px 12px;
+  }
+  .camera-placeholder small {
+    display: none;
+  }
+  .mini-camera {
+    height: 85px;
+  }
+  .brand small {
+    display: none;
+  }
+  .range-labels {
+    display: none;
+  }
+  .instruction p {
+    font-size: 10px;
+  }
+  .control-card .primary {
+    margin-top: 6px;
+  }
+}
