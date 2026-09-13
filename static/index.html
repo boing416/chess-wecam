@@ -171,11 +171,11 @@
             <button id="stopScan" class="secondary" hidden>Остановить распознавание</button>
             <div id="candidates" class="candidates"></div>
             <button id="pointMove" class="secondary" hidden>Указать ход на доске</button>
-            <div id="manualMove" hidden>
+            <details id="manualMove" hidden><summary>Все допустимые ходы</summary>
               <label class="field-label" for="legalMove">Нет нужного варианта? Все допустимые ходы:</label>
               <select id="legalMove" aria-label="Все допустимые ходы"></select>
               <button id="chooseLegalMove" class="secondary">Показать для подтверждения</button>
-            </div>
+            </details>
             <div class="two-buttons secondary-actions">
               <button id="undo" class="secondary">↶ Шаг назад</button
               ><button id="newGame" class="secondary">Новая партия</button>

@@ -987,7 +987,8 @@ body.working button:not(#closeSetup):not(#stopScan) {
   aside {
     min-height: 0;
     display: grid;
-    grid-template-rows: minmax(120px, 1fr) max-content minmax(90px, 0.3fr) auto;
+    grid-template-rows: max-content max-content minmax(90px, 1fr) auto;
+    overflow-y: auto;
     gap: 10px;
   }
   .control-card {
@@ -1233,13 +1234,14 @@ body.working button:not(#closeSetup):not(#stopScan) {
     flex-shrink: 0;
   }
   .position-board {
-    flex: 1;
-    container-type: size;
+    flex: none;
+    container-type: normal;
     align-items: center;
   }
   .position-card .board-shell {
-    width: min(100cqw, 100cqh, 38dvh);
-    height: min(100cqw, 100cqh, 38dvh);
+    width: min(100%, clamp(200px, 34dvh, 320px));
+    height: auto;
+    flex-shrink: 0;
   }
   .view-label {
     font-size: 8px;
