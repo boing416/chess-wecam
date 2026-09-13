@@ -189,7 +189,7 @@ def ask_model(prompt, images):
     return json.loads(match.group())
 
 
-def recognize_move(board, before, after, use_model=True):
+def recognize_move(board, before, after, use_model=False):
     ranked, changed, warning = rank_moves(board, before, after)
     result = {
         "candidates": ranked,
@@ -201,6 +201,10 @@ def recognize_move(board, before, after, use_model=True):
     if not ranked or warning:
         return result
     best = ranked[0]
+    gap = best["score"] - (ranked[1]["score"] if len(ranked) > 1 else 0)
+    if best["score"] >= 0.55 and gap >= 0.12:
+        result["uci"] = best["uci"]
+        return result
     if use_model:
         try:
             candidates = [m["uci"] for m in ranked if m["score"] > 0.15]

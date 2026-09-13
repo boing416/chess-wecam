@@ -257,7 +257,7 @@ class Handler(BaseHTTPRequestHandler):
             def recognize():
                 try:
                     completed.put((vision.recognize_move(
-                        board, before, after, bool(data.get("use_model", True))
+                        board, before, after, bool(data.get("use_model", False))
                     ), None))
                 except Exception as exc:
                     completed.put((None, exc))

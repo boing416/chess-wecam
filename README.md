@@ -88,3 +88,5 @@ node tests/geometry.test.js
 Код проекта — GPL-3.0-or-later. Используется python-chess (GPL-3.0-or-later); изображения фигур предоставляются его SVG-модулем (фигуры Colin M. L. Burnett, GPL). Stockfish устанавливается отдельно (GPLv3). OpenCV и NumPy имеют собственные лицензии. Веса моделей и LM Studio не входят в репозиторий и распространяются на условиях своих правообладателей.
 
 Документация: [LM Studio API](https://lmstudio.ai/docs/developer/openai-compat/chat-completions), [python-chess](https://python-chess.readthedocs.io/en/latest/), [Stockfish](https://stockfishchess.org/).
+
+По умолчанию ход определяется сравнением кадров OpenCV и проверкой допустимых ходов, без языковой модели. Уверенный результат сразу предлагается для подтверждения. Gemma можно дополнительно включить в настройках для неоднозначных кадров. Это отслеживание ходов от известной позиции, а не распознавание произвольной расстановки фигур.
