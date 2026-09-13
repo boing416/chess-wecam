@@ -280,7 +280,7 @@ function renderControls() {
       title = state.check ? "Вам шах — ваш ход" : "Ваш ход";
       label = state.player === "white" ? "Ход белых" : "Ход чёрных";
       instruction = state.camera_mode
-        ? "Сделайте ход на настоящей доске, уберите руку и нажмите «Я походил»."
+        ? ""
         : "Нажмите на фигуру, затем на поле назначения. Подтвердите ход справа.";
       step = "02";
     } else {
@@ -298,6 +298,7 @@ function renderControls() {
   }
   $("headline").textContent = title;
   $("instruction").textContent = instruction;
+  $("instruction").parentElement.hidden = !instruction;
   $("turnLabel").textContent = label;
   $("stepNo").textContent = step;
   $("cameraStatus").textContent = !stream
