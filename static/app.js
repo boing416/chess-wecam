@@ -825,16 +825,17 @@ $("undo").onclick = () =>
   });
 $("newGame").onclick = () => {
   if (!confirm("Начать новую партию? Текущая будет сохранена в архив.")) return;
-  preparing = true;
-  render();
-  $("newGameSettings").hidden = false;
-  message(
-    "Расставьте фигуры заново. Для камеры обновите опорный кадр перед стартом.",
-  );
-  if (state.camera_mode) {
-    state.synced = false;
-    openSetup();
-  }
+  work("Готовлю новую партию…", async () => {
+    apply(await api("prepare-new", {}));
+    preparing = true;
+    selected = null;
+    candidatePreview = null;
+    $("candidates").replaceChildren();
+    $("fen").value = "";
+    render();
+    message("Расставьте фигуры для новой партии и запомните расстановку в настройках камеры.");
+    if (state.camera_mode) openSetup();
+  });
 };
 $("export").onclick = async () => {
   try {

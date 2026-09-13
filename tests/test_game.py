@@ -40,6 +40,25 @@ class GameTests(unittest.TestCase):
             self.g.engine.quit()
         self.temp.cleanup()
 
+    def test_prepare_new_clears_pending_and_proposal_and_archives(self):
+        self.g.board.push_uci("e2e4")
+        self.g.proposal = {"uci": "e7e5"}
+        self.g.pending = {"uci": "e7e5"}
+        self.g.baseline = picture(self.g.board)
+        self.g.scan_frame = self.g.baseline.copy()
+        self.g.scan_revision = self.g.revision
+        self.g.corners = [[0,0],[1,0],[1,1],[0,1]]
+        old_scan_id = self.g.scan_id
+        self.g.prepare_new()
+        self.assertFalse(self.g.active)
+        self.assertEqual(self.g.board.fen(), chess.STARTING_FEN)
+        for value in [self.g.pending, self.g.proposal, self.g.baseline, self.g.scan_frame, self.g.scan_revision]:
+            self.assertIsNone(value)
+        self.assertGreater(self.g.scan_id, old_scan_id)
+        self.assertIsNotNone(self.g.corners)
+        self.assertEqual(len(list(Path(self.temp.name).glob('game-*.pgn'))), 1)
+        self.assertFalse(Game(self.g.path).active)
+
     def start(self, color="white", fen=""):
         self.g.start({"player": color, "camera_mode": False, "fen": fen})
 

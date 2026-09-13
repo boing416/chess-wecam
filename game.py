@@ -123,6 +123,24 @@ class Game:
             "load_error": self.load_error,
         }
 
+    def prepare_new(self):
+        # Archive the previous game before clearing all transient camera state.
+        if self.board.move_stack:
+            archive = self.path.parent / (
+                "game-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f") + ".pgn"
+            )
+            archive.write_text(self.pgn())
+        self.board = chess.Board()
+        self.active = False
+        self.pending = None
+        self.proposal = None
+        self.baseline = None
+        self.scan_frame = None
+        self.scan_revision = None
+        self.scan_id += 1
+        self.revision += 1
+        self.save()
+
     def start(self, data):
         board = chess.Board(data.get("fen") or chess.STARTING_FEN)
         if not board.is_valid():

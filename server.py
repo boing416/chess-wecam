@@ -141,6 +141,8 @@ class Handler(BaseHTTPRequestHandler):
                     GAME.revision += 1
                     GAME.scan_id += 1
                     GAME.save()
+                elif action == "/api/prepare-new":
+                    GAME.prepare_new()
                 elif action == "/api/start":
                     GAME.start(data)
                 elif action == "/api/propose":
